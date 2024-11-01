@@ -10,7 +10,7 @@ https://se6liferlygood.github.io/F3Xbuilder/
 
 
 
-HERE IS THE MACRO (it is autohotkey version 2)
+HERE IS THE MACRO (it is autohotkey version 2 and I see the axis boxes in f3x in this order: x, y, z)
 
 https://github.com/se6liferlygood/F3Xbuilder/blob/4da11a5001751af20e82229c835c953f2707b427/F3XBUILDER/build.ahk
 
