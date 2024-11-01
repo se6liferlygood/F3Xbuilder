@@ -25,3 +25,5 @@ Then you save the build as a file and it says how to do that in the tutorial!
 Then you put the build file in the same folder as the build macro file is in!
 
 Then you just use the macro to build it!
+
+(if you dont get it you must have the build macro downloaded and you can put it in your own custom folder and theres also my own builds here too)
