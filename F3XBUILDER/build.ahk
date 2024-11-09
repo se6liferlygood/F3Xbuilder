@@ -186,7 +186,10 @@ resize(xsize, ysize, size) {
     Sleep rtime
 }
 
+global width := 0
 JsonToObj(JsonString) {
+    global width := 0
+    wcheck := 0
     ; Check if the input string is valid
     if (JsonString == "") {
         MsgBox("Error: Empty JSON string provided.")
@@ -226,6 +229,12 @@ JsonToObj(JsonString) {
             local RowArray := []
             for Element in Elements {
                 RowArray.Push(Number(Element))  ; Convert to integer and add to the row array
+                if(Number(Element) > 0 && wcheck = 0) {
+                    width++
+                }
+            }
+            if(width > 0) {
+                wcheck := 1
             }
             TwoDArray.Push(RowArray)  ; Add the row to the 2D array
         }
@@ -253,6 +262,7 @@ build(checks, pi, f, x, y, z, sz) {
         return 0
     }
     global f3xstr
+    logicstr := ""
     global xx
     global xy
     global yx
@@ -260,9 +270,6 @@ build(checks, pi, f, x, y, z, sz) {
     global zx
     global zy
     global resetcount
-    length := 10
-    width := 20
-    depth := 10
     if(xx = 0 || xy = 0 || yx = 0 || yy = 0 || zx = 0 || zy = 0) {
         MsgBox("YOU MUST DEFINE WHERE X AND Y AND Z AXIS IS!")
         return 0
@@ -311,7 +318,8 @@ build(checks, pi, f, x, y, z, sz) {
     buildcount := 0
     skipcount := 0
 
-
+    global width
+    length := width / 2
 
 
     while (checks = 1 || checks = 0) {
@@ -334,8 +342,12 @@ build(checks, pi, f, x, y, z, sz) {
     resize(size,size,size)
     Sleep time * 2
 
-    resetcount++
-    loop 8 {
+
+    brickcount := 0
+    currentbricks := 0
+    percentagewise := 0
+    percentage := 0
+    loop 9 {
         if(GetKeyState("b","P")) {
             building := 0
             ToolTip()
@@ -352,8 +364,10 @@ build(checks, pi, f, x, y, z, sz) {
         currentxsize := xsize
         currentysize := ysize
         currentzsize := zsize
-        if(A_Index >= 2) {
-            indextype := A_Index + 1
+        if(A_Index = 1) {
+            indextype := 2
+        } else if(A_Index = 2) {
+            indextype := 1
         } else {
             indextype := A_Index
         }
@@ -426,6 +440,22 @@ build(checks, pi, f, x, y, z, sz) {
                             index := array3D[zlevel][ylevel][xlevel]
                             ; Check the value at the current index
                             if (index > 0) {
+                                if(indextype = 2) {
+                                    if(index = 1) {
+                                        brickcount++
+                                        percentagewise += 1
+                                    } else if(index >= 3 && index <= 5) {
+                                        brickcount++
+                                        percentagewise += 3
+                                    } else if(index >= 6 && index <= 8) {
+                                        brickcount++
+                                        percentagewise += 9
+                                    } else if(index = 9){
+                                        brickcount++
+                                        percentagewise += 27
+                                    }
+                                } else {
+
                                 check := 1
                                 if(check2 = 1) {
                                     check2 := 0
@@ -476,8 +506,27 @@ build(checks, pi, f, x, y, z, sz) {
                                         resize(ysize,zsize,xsize)
                                     }
                                 }
-                                movebrick(x + (zlevel + squish) * size, y + (ylevel + addy) * size,z + xlevel * size)
+                                if(indextype = 1) {
+                                    currentbricks++
+                                    percentage++
+                                } else if(indextype >= 3 && indextype <= 5) {
+                                    currentbricks++
+                                    percentage += 3
+                                } else if(indextype >= 6 && indextype <= 8) {
+                                    currentbricks++
+                                    percentage += 9
+                                } else if(indextype = 9) {
+                                    currentbricks++
+                                    percentage += 27
                                 }
+                                logicstr := "`n`nAMOUNT OF BRICKS TO BE PLACED: " brickcount "`n`nCURRENT BRICKS PLACED: " currentbricks "`n`nBUILDING COMPLETION: " Round((percentage / percentagewise) * 100) "%"
+                                if(buildcount > 0) {
+                                    logicstr := logicstr "`n`nBUILDCOUNT: " buildcount - skipcount
+                                }
+                                movebrick(x + (zlevel + squish) * size, y + (ylevel + addy) * size,z + xlevel * size)
+                                ToolTip(f3xstr logicstr,A_ScreenWidth / 2, A_ScreenHeight / 2)
+                                }
+                            }
                             } 
 
 
@@ -518,15 +567,11 @@ if(checks = 0) {
     goto out
 }
 buildcount := buildcount + 1
-ToolTip(f3xstr "`n`nBUILDCOUNT: " buildcount - skipcount, A_ScreenWidth / 2, A_ScreenHeight / 2)
     }
     out:
+    Sleep 1000
     ToolTip()
     building := 0
-    if(resetcount >= 3) {
-        MsgBox("RELOADED SCRIPT!")
-        Reload
-    }
 }
 
 !b:: {
