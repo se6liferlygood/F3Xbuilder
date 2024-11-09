@@ -27,3 +27,5 @@ Then you put the build file in the same folder as the build macro file is in!
 Then you just use the macro to build it!
 
 (if you dont get it you must have the build macro downloaded and you can put it in your own custom folder and theres also my own builds here too)
+
+IF YOU CANT USE THE MACRO REMEMBER TO FOLLOW THE STEPS IT TELLS YOU TO FOLLOW AND ALSO THAT TO FIGURE OUT THE AXIS BOXES AND TO BUILD YOU NEED TO PLACE OUT OR SELECT A BRICK FIRST!
