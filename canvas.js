@@ -1,14 +1,16 @@
 const canvas = document.getElementById("canvas1");
 const ctx = canvas.getContext('2d');
-canvas.height = 10
+canvas.height = Number(prompt("BUILD SIZE!\n\nIT IS BEST TO START OUT WITH 5 OR 10 IF IT IS YOUR FIRST TIME!\n\n(TYPE IN A NUMBER)"));
 canvas.width = canvas.height * 2;
-depth = 10;
+depth = canvas.height;
 zlevel = 0;
 document.title = zlevel + 1;
 pause = 0;
 timer = 0;
 under = 0;
 above = 0;
+framecheck = 0; //0 is allowed and 1 is wait
+
 
 function RB(min, max) {
     return Math.floor(Math.random() * (max - min + 1) + min)
@@ -23,11 +25,11 @@ var draw = () => {
 
 const array3D = (x, y, z) => {
     const array = [];
-    for (let i = 0; i < z + 5; i++) {
+    for (let i = 0; i < z + 2; i++) {
         array[i] = [];
-        for (let j = 0; j < y + 5; j++) {
+        for (let j = 0; j < y + 2; j++) {
             array[i][j] = [];
-            for (let k = 0; k < x + 5; k++) {
+            for (let k = 0; k < x + 2; k++) {
                 array[i][j][k] = 0;
             }
         }
@@ -93,8 +95,7 @@ function allNeighborsAreOne2d(array,z,y,x,c) {
 
 function out(farray) {
 	pause = 1;
-	ctx.clearRect(0,0,canvas.width,canvas.height);
-	let array = farray;
+	let array = JSON.parse(JSON.stringify(farray)); //yeah I had to copy the fucking array because javascript likes to change original array otherwise. fuck you javascript
 
 	// cellular automata written by me
 	for(let i = 0; i < 3; i++) {
@@ -197,9 +198,8 @@ function out(farray) {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 	setTimeout(() => {
-		map = array3D(canvas.height,canvas.width,depth);
 		pause = 0;
-	},5000)
+	},1000)
 }
 
 var mouse = {
@@ -212,14 +212,101 @@ addEventListener("mousemove", (e) => {
         mouse.y = Math.floor((e.y / window.innerHeight) * canvas.height);
         mouse.x = Math.floor((e.x / window.innerWidth) * canvas.width);
 	}
+	game();
 })
 addEventListener("click", (e) => {
-	if(pause == 0) draw();
+	if(pause == 0) {
+		draw();
+		if(drawingblock == 1) {
+			bc[0] = mouse.x;
+			bc[1] = mouse.y;
+			bc[2] = zlevel;
+			drawingblock++;
+			alert("CLICK WHERE YOU WANT THE BLOCK AREA TO END!");
+		} else if(drawingblock == 2) {
+			bc2[0] = mouse.x;
+			bc2[1] = mouse.y,
+			bc2[2] = zlevel;
+			drawingblock = 0;
+			drawblock(bc[0],bc[1],bc[2],bc2[0],bc2[1],bc2[2],map,erase);
+		}
+	}
+	game();
 })
+
+class stack {
+	constructor() {
+		this.array = [0];
+	}
+	push(x) {
+		this.array.push(x);
+	}
+	pop() {
+		this.array.pop();
+	}
+	peek() {
+		return this.array[this.array.length - 1];
+	}
+	empty() {
+		this.array = [];
+	}
+	isempty() {
+		if(this.array.length == 0) {
+			return true;
+		} else return false;
+	}
+	change(x) {
+		this.array[this.array.length - 1] = x;
+	}
+}
+
+var drawblock = (x,y,z,x2,y2,z2,array,erase) => {
+	if(x2 < x) {
+		let cx2 = x2;
+		let cx = x;
+		x2 = cx;
+		x = cx2;
+	}
+	if(y2 < y) {
+		let cy2 = y2;
+		let cy = y;
+		y2 = cy;
+		y = cy2;
+	}
+	if(z2 < z) {
+		let cz2 = z2;
+		let cz = z;
+		z2 = cz;
+		z = cz2;
+	}
+	for(let zz = z; zz <= z2; zz++) {
+		for(let yy = y; yy <= y2; yy++) {
+			for(let xx = x; xx <= x2; xx++) {
+				if(erase == true) {
+					array[zz][yy][xx] = 2;
+					console.log("ERASED Z"+zz+"Y"+yy+"X"+xx);
+				} else {
+					array[zz][yy][xx] = 1;
+					console.log("DRAWN Z"+zz+"Y"+yy+"X"+xx);
+				}
+			}
+		}
+	}
+}
+
+var maze = 0;
+var bc = []; //0 = x, 1 = y, z = 2;
+var bc2 = []; //same and this is coordinates used to draw / erase a block defined area
+var drawingblock = 0;
+var erase = false;
+var mstacky = new stack();
+var mstackx = new stack();
 var keys = [];
 onkeydown = onkeyup = (e) => {
     keys[e.keyCode] = e.type == 'keydown';
+
 	if(pause == 0) {
+		if(framecheck == 0) {
     if(keys[38]) { //up arrow
 	keys[38] = 0;
 	mouse.y--;
@@ -270,11 +357,11 @@ onkeydown = onkeyup = (e) => {
 			}
 		}
 	}
+}
+
 	if(keys[79]) { //o
 		keys[79] = 0;
-		let smap = map;
 		out(map);
-		map = smap;
 	}
 	if(keys[83]) { //s
 		keys[83] = 0;
@@ -299,6 +386,59 @@ onkeydown = onkeyup = (e) => {
 			document.title = zlevel + 1;
 		}
 	}
+	if(keys[71]) { //g generate
+		let choice = 0
+		switch(Number(prompt("TYPE 1 TO GENERATE A MAZE PATH ON YOUR CURRENT LEVEL!\n\n TYPE 2 TO COPY THE LAYER UNDER OR ABOVE YOU BUT INVERTED!\n\nTYPE 3 TO COPY THE LAYER THAT IS UNDER OR ABOVE YOU!\n\nTYPE 4 TO ERASE CURRENT LAYER!\n\nTYPE 5 TO DRAW / ERASE A BLOCK DEFINED AREA!\n\nTYPE 6 TO NOT DO ANYTHING"))) {
+			case 1: //maze generation
+				maze = 1;
+				map[zlevel][mouse.y][mouse.x] = 1;
+				mstackx.change(mouse.x);
+				mstacky.change(mouse.y);
+			break;
+			case 2: //draw inverted layer above or under you
+				if(confirm("CONFIRM TO COPY THE LAYER BUT INVERTED UNDER YOU\n\nDONT CONFIRM TO COPY THE LAYER BUT INVERTED ABOVE YOU!")) choice = 1; //under
+				for(let i = 0; i < canvas.height; i++) {
+					for(let j = 0; j < canvas.width; j++) {
+						if(choice == 0 && map[zlevel + 1]?.[i][j] !== 1 && zlevel < depth - 1) {
+							map[zlevel][i][j] = 1;
+						} else if(choice == 1 && map[zlevel - 1]?.[i][j] !== 1 && zlevel >= 0) {
+							map[zlevel][i][j] = 1;
+						}
+					}
+				}
+			break;
+			case 3: //copy layer under or above you
+				if(confirm("CONFIRM TO COPY THE LAYER UNDER YOU\n\nDONT CONFIRM TO COPY THE LAYER ABOVE YOU!")) choice = 1; //under
+				for(let i = 0; i < canvas.height; i++) {
+					for(let j = 0; j < canvas.width; j++) {
+						if(choice == 0 && zlevel < depth - 1) {
+							map[zlevel][i][j] = map[zlevel + 1][i][j];
+						} else if(choice == 1 && zlevel >= 0) {
+							map[zlevel][i][j] = map[zlevel - 1][i][j];
+						}
+					}
+				}
+			break;
+			case 4: //erase current layer
+				if(confirm("CONFIRM THAT YOU WANT TO ERASE THIS CURRENT LAYER")) {
+					for(let i = 0; i < canvas.height; i++) {
+						for(let j = 0; j < canvas.width; j++) {
+							map[zlevel][i][j] = 2;
+						}
+					}
+				}
+			break;
+			case 5: //block draw / erase
+				if(confirm("CONFIRM IF YOU WANNA DRAW A BLOCK AREA\n\nDONT CONFIRM IF YOU WANNA ERASE A BLOCK AREA")) {
+					erase = false;
+				} else erase = true;
+				drawingblock = 1;
+				alert("CLICK WHERE THE BLOCK AREA IS TO START");
+			break;
+		}
+		keys[71] = 0;
+	}
+	game();
 }
 
 }
@@ -366,6 +506,18 @@ function process3DArrayFromFile(file) {
 				return;
 			}
 
+			//I added so that the build size changes with build file imported
+			canvas.width = 0;
+			for(let i = 0; i < jsonData[0][0].length; i++) {
+				if(jsonData[0][0][i] > 0) canvas.width++;
+			}
+			canvas.height = canvas.width / 2;
+			depth = canvas.height;
+			zlevel = 0;
+			document.title = zlevel + 1;
+			above = 0;
+			under = 0;
+
 			// Iterate through the 3D array and process data
 			for (let z = 0; z < jsonData.length; z++) {
 				for (let y = 0; y < jsonData[z].length; y++) {
@@ -421,20 +573,105 @@ function process3DArrayFromFile(file) {
 		}
 	};
 	reader.readAsText(file);
+	game();
 }
 
 
 
-
 var game = () => {
+	if(framecheck == 1) return 0;
 	if(above == 1 && under == 1) {
 		above = 0;
 		under = 0;
 		document.title = zlevel + 1;
 	}
+
+	if(maze == 1) document.title = "GENERATING MAZE PATH!";
+	while(maze == 1) { //maze generation (recursive backtracking)
+		pause = 1;
+		let went = 0;
+		let direction = RB(1,4); // 1 = up, 2 = down, 3 = left, 4 = right
+		let direction2 = RB(1,2);
+		let count = 0;
+		while(went == 0) {
+			let y = mstacky.peek();
+			let x = mstackx.peek();
+			switch(direction) {
+				case 1: //up
+					if(map[zlevel][y - 2]?.[x] !== 1 && y - 2 >= 0) {
+						mstacky.push(y - 2);
+						mstackx.push(x);
+						map[zlevel][y - 1][x] = 1;
+						map[zlevel][y - 2][x] = 1;
+						went = 1;
+					}
+				break;
+				case 2: //down
+					if(map[zlevel][y + 2]?.[x] !== 1 && y + 2 < canvas.height) {
+						mstacky.push(y + 2);
+						mstackx.push(x);
+						map[zlevel][y + 1][x] = 1;
+						map[zlevel][y + 2][x] = 1;
+						went = 1;
+					}
+				break;
+				case 3: //left
+					if(map[zlevel][y][x - 2] !== 1 && x - 2 >= 0) {
+						mstacky.push(y);
+						mstackx.push(x - 2);
+						map[zlevel][y][x - 1] = 1;
+						map[zlevel][y][x - 2] = 1;
+						went = 1;
+					}
+				break;
+				case 4: //right
+					if(map[zlevel][y][x + 2] !== 1 && x + 2 < canvas.width) {
+						mstacky.push(y);
+						mstackx.push(x + 2);
+						map[zlevel][y][x + 1] = 1;
+						map[zlevel][y][x + 2] = 1;
+						went = 1;
+					}
+				break;
+			}
+			if(went == 0) {
+				count++;
+				if(direction2 == 1) {
+					direction--;
+					if(direction < 1) direction = 4;
+				} else if(direction2 == 2) {
+					direction++;
+					if(direction > 4) direction = 1;
+				}
+				if(count >= 3) {
+					count = 0;
+					direction = RB(1,4);
+					direction2 = RB(1,2);
+					mstackx.pop();
+					mstacky.pop();
+					if(mstackx.isempty() || mstacky.isempty()) {
+						went = 1;
+						mstackx.empty();
+						mstacky.empty();
+						mstackx.push(0);
+						mstacky.push(0);
+						maze = 0;
+						pause = 0;
+						above = 0;
+						under = 0;
+						document.title = zlevel + 1;
+					}
+				}
+			}
+		}
+	}
+
+	if(pause == 0 || maze == 1) drawing();
+	framecheck = 1;
+
 	setTimeout(() => {
-		if(pause == 0) drawing();
-		game();
+		framecheck = 0;
 	},1000/30);
 }
+
 game();
