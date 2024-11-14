@@ -134,6 +134,7 @@ onkeydown = onkeyup = (e) => {
             keys[68] = 0;
         }
         if(keys[39]) { //right arrow
+            viewy = 1;
             switch(viewx) {
                 case 0:
                     viewx = 3;
@@ -169,6 +170,7 @@ onkeydown = onkeyup = (e) => {
             keys[65] = 0;
         }
         if(keys[37]) { //left arrow
+            viewy = 1;
             switch(viewx) {
                 case 0:
                     viewx = 1;
