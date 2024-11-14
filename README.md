@@ -10,6 +10,11 @@ https://se6liferlygood.github.io/F3Xbuilder/
 
 
 
+BUILD FILE VIEWER!
+after you have finished your build in the build editor and downloaded it you can view the build here! https://se6liferlygood.github.io/F3Xbuilder/view
+
+
+
 HERE IS THE MACRO (it is autohotkey version 2 https://www.autohotkey.com/ and I see the axis boxes in f3x in this order: x, y, z)
 
 https://github.com/se6liferlygood/F3Xbuilder/blob/main/F3XBUILDER/build.ahk
