@@ -12,7 +12,7 @@ https://se6liferlygood.github.io/F3Xbuilder/
 
 BUILD FILE VIEWER!
 
-after you have finished your build in the build editor and downloaded it you can view the build here!
+After you have finished your build in the build editor and downloaded it you can view the build file here!
 
 https://se6liferlygood.github.io/F3Xbuilder/view
 
