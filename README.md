@@ -1,3 +1,5 @@
+(it is good if you open these links in a new tab)
+
 BUILD EDITOR TUTORIAL!
 
 https://se6liferlygood.github.io/F3Xbuilder/tutorial.html
