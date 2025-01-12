@@ -4,11 +4,15 @@ canvas.height = 100;
 canvas.width = canvas.height * 2;
 var depth = canvas.height / 2;
 
-alert("YOU NEED TO DRAG AND DROP THE BUILD FILE TO VIEW IT!\n\nCONTROLS ARE IN THE TUTORIAL!");
+alert("YOU NEED TO DRAG AND DROP THE BUILD FILE TO VIEW IT!\n\nCONTROLS ARE IN THE TUTORIAL!\n\n(I am sorry if this build viewer is shit because I dont know enough math yet)");
 
 var distance = (x0,y0,x2,y2) => {
     //d=√((x_2-x_0)²+(y_2-y_0)²)
     return Math.sqrt((x2-x0)**2+(y2-y0)**2);
+}
+var distance3D = (x0,y0,z0,x2,y2,z2) => {
+    //d=√((x_2-x_0)²+(y_2-y_0)²)
+    return Math.sqrt((x2-x0)**2+(y2-y0)**2+(z2-z0)**2);
 }
 var test = (x,y,x2,y2,XorY) => {
     let aX = x - x2;
@@ -61,18 +65,12 @@ const array3D = (x, y, z) => {
     }
     return array;
 }
-var mapxsize = 10;
-var mapysize = 10;
-var mapzsize = 10;
+var mapxsize = 4;
+var mapysize = 2;
+var mapzsize = 2;
 var map = array3D(mapxsize,mapysize,mapzsize);
 
-for(let i = 0; i < mapzsize; i++) {
-    for(let j = 0; j < mapysize; j++) {
-        for(let k = 0; k < mapxsize; k++) {
-            if(RB(1,10) == 1) map[i][j][k] = 1;
-        }
-    }
-}
+map[0][0][0] = 1;
 
 
 var mouse = {
@@ -267,6 +265,8 @@ var drawing = () => {
 	ctx.clearRect(0,0,canvas.width,canvas.height);
 	for(let i = 0; i < canvas.height; i++) {
         for(let j = 0; j < canvas.width; j++) {
+
+
             let x = player1.x;
             let y = player1.y;
             let z = player1.z;
@@ -274,7 +274,6 @@ var drawing = () => {
             let jj = canvas.width / -2 + j;
             let ojj = canvas.width / -2 + canvas.width - 1 - j;
             let oii = canvas.height / -2 + canvas.height - 1 - i;
-            let count = 0;
             let fov = canvas.height;
             let xs = 0;
             let ys = 0;
@@ -313,26 +312,141 @@ var drawing = () => {
                 ys = test3D(x,y,z,x + jj,y + oii, z - fov,"Y");
                 zs = test3D(x,y,z,x + jj,y + oii, z - fov,"Z");
             }
-            let accuracy = 3;
-            let maxc = 50 * accuracy;
+            let xs2 = xs;
+            let ys2 = ys;
+            let zs2 = zs;
+            let maxd = 15;
+            let c = 0;
+            let c2 = 0;
+            let maxc = 100;
+            let maxc2 = maxc * 3;
+            let accuracy = 0.5;
+            let acount = 0; //inspired from DDA algorithm (maybe its stupid that I look 1 axis at a time but hey atleast it is faster and more accurate than incrementing 1 bit at a time)
+            /*
+            0 = x
+            1 = y
+            2 = z
+            */
+           let rx = Math.floor(x);
+           let ry = Math.floor(y);
+           let rz = Math.floor(z);
+           let ld = maxd * 2;
+           let lx = x;
+           let ly = y;
+           let lz = z;
+            bigone:
             while(true) {
-                x += xs / accuracy;
-                y += ys / accuracy;
-                z += zs / accuracy;
-                count++;
-                if(map[Math.floor(z)]?.[Math.floor(y)]?.[Math.floor(x)] === 1) {
-                    let borderx = Math.ceil(x) - x;
-                    let bordery = Math.ceil(y) - y;
-                    let borderz = Math.ceil(z) - z;
+                c2++;
+                if(c2 > maxc2) break bigone;
+                switch(acount) {
+                    case 0: //x
+                            if(xs > 0) {
+                                if(Math.floor(x) - x == 0) {
+                                    xs2 = accuracy * 2;
+                                } else {
+                                    xs2 = accuracy;
+                                }
+                            } else {
+                                if(Math.floor(x) - x == 0) {
+                                    xs2 = accuracy * -2;
+                                } else {
+                                    xs2 = accuracy * -1;
+                                }
+                            }
+                            
+                        ys2 = xs2 * (ys / xs);
+                        zs2 = xs2 * (zs / xs);
+                    break;
+                    case 1: //y
+                        if(ys > 0) {
+                            if(Math.floor(y) - y == 0) {
+                                ys2 = accuracy * 2;
+                            } else {
+                                ys2 = accuracy;
+                            }
+                        } else {
+                            if(Math.floor(y) - y == 0) {
+                                ys2 = accuracy * -2;
+                            } else {
+                                ys2 = accuracy * -1;
+                            }
+                        }
+                        xs2 = ys2 * (xs / ys);
+                        zs2 = ys2 * (zs / ys);
+                    break;
+                    case 2: //z
+                           if(zs > 0) {
+                            if(Math.floor(z) - z == 0) {
+                                zs2 = accuracy * 2;
+                            } else {
+                                zs2 = accuracy;
+                            }
+                           } else {
+                            if(Math.floor(z) - z == 0) {
+                                zs2 = accuracy * -2;
+                            } else {
+                                zs2 = accuracy * -1;
+                            }
+                           }
+                        xs2 = zs2 * (xs / zs);
+                        ys2 = zs2 * (ys / zs);
+                    break;
+                }
+                x += xs2;
+                y += ys2;
+                z += zs2;
+                if(xs > 0) {
+                    rx = Math.floor(x);
+                } else rx = Math.ceil(x - 1);
+                if(ys > 0) {
+                    ry = Math.floor(y);
+                } else ry = Math.ceil(y - 1);
+                if(zs > 0) {
+                    rz = Math.floor(z);
+                } else rz = Math.ceil(z - 1);
+                c++;
+                let d = Math.abs(distance3D(player1.x,player1.y,player1.z,x,y,z));
+                if(map[rz]?.[ry]?.[rx] === 1 || (acount == 4 && ld < maxd)) {
+                    if(d <= ld && acount <= 3) {
+                        ld = d;
+                        lx = x;
+                        ly = y;
+                        lz = z;
+                    }
+
+                    c = 0;
+                    x = player1.x;
+                    y = player1.y;
+                    z = player1.z;
+                    xs2 = xs;
+                    ys2 = ys;
+                    zs2 = zs;
+
+                    if(acount >= 3 && ld < maxd) {
+                    let borderx = Math.ceil(lx) - lx;
+                    let bordery = Math.ceil(ly) - ly;
+                    let borderz = Math.ceil(lz) - lz;
                     let bordermin = 0.4;
                     let bordermax = 1 - bordermin;
                     if((borderx < bordermin || borderx > bordermax) && (bordery < bordermin || bordery > bordermax) && (borderz < bordermin || borderz > bordermax)) {
                         ctx.fillStyle = "grey";
                     } else ctx.fillStyle = "white";
-                    ctx.globalAlpha = 1 - (count / maxc);
+                    ctx.globalAlpha = 1 - (ld / maxd);
                     ctx.fillRect(canvas.width - j,canvas.height - i,1,1);
-                    break;
-                } else if(count >= maxc) break; //|| (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height || z < 0 || z >= depth) just in case I need to use this
+                    break bigone;
+                }
+                acount++;
+                } else if(d >= maxd || c >= maxc) {
+                    acount++;
+                    c = 0;
+                    x = player1.x;
+                    y = player1.y;
+                    z = player1.z;
+                    xs2 = xs;
+                    ys2 = ys;
+                    zs2 = zs;
+                    if(acount > 4) break bigone;
+                }
             }
         }
     }
@@ -341,7 +455,7 @@ var drawing = () => {
     }, 1000 / 30)
 }
 
-var player1 = new player(Math.floor(canvas.width / 2), Math.floor(canvas.height / 2),Math.floor(depth / 2));
+var player1 = new player(-10, Math.floor(mapysize / 2),0);
 
 //yeah I used AI for all this file stuff
 
@@ -367,6 +481,18 @@ window.addEventListener('drop', (event) => {
 	}
 });
 
+function decode3(encoded) {
+    // Extract the original numbers
+    const num1 = (encoded >> 16) & 0xFF; // Get the first 8 bits
+    const num2 = (encoded >> 8) & 0xFF;  // Get the next 8 bits
+    const num3 = encoded & 0xFF;        // Get the last 8 bits
+    return [num1, num2, num3];
+}
+
+function isEven(n) {
+	return n % 2 == 0;
+ }
+
 // Function to read and process the JSON file
 function process3DArrayFromFile(file) {
 	const reader = new FileReader();
@@ -375,77 +501,44 @@ function process3DArrayFromFile(file) {
 			// Parse the JSON data
 			const jsonData = JSON.parse(event.target.result);
 
-			// Ensure the data is a 3D array
+			// Ensure the data is an array
 			if (!Array.isArray(jsonData)) {
 				console.error("Invalid JSON data format.");
 				return;
 			}
 
 			//I added so that the build size changes with build file imported
-			mapxsize = 0;
-			for(let i = 0; i < jsonData[0][0].length; i++) {
-				if(jsonData[0][0][i] > 0) mapxsize++;
-			}
-			mapysize = mapxsize / 2;
+			mapxsize = jsonData[0];
+            mapysize = jsonData[1]
             mapzsize = mapysize;
             player1.x = -10;
-            player1.y = mapysize / 2;
+            player1.y = Math.floor(mapysize / 2);
             player1.z = 0;
-            map = [];
             map = array3D(mapxsize,mapysize,mapzsize);
             viewy = 1;
             viewx = 0;
 
-			// Iterate through the 3D array and process data
-			for (let z = 0; z < jsonData.length; z++) {
-				for (let y = 0; y < jsonData[z].length; y++) {
-					for (let x = 0; x < jsonData[z][y].length; x++) {
-						//this is my own code
-						index = jsonData[z][y][x];
-						if(index === 1) {
-							map[z][y][x] = 1;
-						} else if(index === 3) { //1x1x3
-							map[z][y][x] = 1;
-							map[z][y][x - 1] = 1;
-							map[z][y][x + 1] = 1;
-						} else if(index === 4) { //1x3x1
-							map[z][y][x] = 1;
-							map[z][y - 1][x] = 1;
-							map[z][y + 1][x] = 1;
-						} else if(index === 5) { //3x1x1
-							map[z][y][x] = 1;
-							map[z - 1][y][x] = 1;
-							map[z + 1][y][x] = 1;
-						} else if(index === 6) { //1x3x3
-							for(let dy = -1; dy <= 1; dy++) {
-								for(let dx = -1; dx <= 1; dx++) {
-									map[z][y + dy][x + dx] = 1;
-								}
-							}
-						} else if(index === 7) { //3x1x3
-							for(let dz = -1; dz <= 1; dz++) {
-								for(let dx = -1; dx <= 1; dx++) {
-									map[z + dz][y][x + dx] = 1;
-								}
-							}
-						} else if(index === 8) { //3x3x1
-							for(let dz = -1; dz <= 1; dz++) {
-								for(let dy = -1; dy <= 1; dy++) {
-									map[z + dz][y + dy][x] = 1;
-								}
-							}
-						} else if(index === 9) { //3x3x3
-							for(let dz = -1; dz <= 1; dz++) {
-								for(let dy = -1; dy <= 1; dy++) {
-									for(let dx = -1; dx <= 1; dx++) {
-										map[z + dz][y + dy][x + dx] = 1;
-									}
-								}
+			for(let i = 2; i < jsonData.length; i++) {
+				if(isEven(i + 1)) { //plus one to match the AHK array index so I dont confuse myself
+					let xyz = decode3(jsonData[i]);
+					let xyzSize = decode3(jsonData[i - 1]);
+					let sx = (xyzSize[0] - 1) / 2;
+					if(sx < 0) sx = 0;
+					let sy = (xyzSize[1] - 1) / 2;
+					if(sy < 0) sy = 0;
+					let sz = (xyzSize[2] - 1) / 2;
+					if(sz < 0) sz = 0;
+					console.log("POSITION: X" + xyz[0] + "Y" + xyz[1] + "Z" + xyz[2] + "\nSIZE: X" + xyzSize[0] + "Y" + xyzSize[1] + "Z" + xyzSize[2]);
+					for(let z = sz * -1; z <= sz; z++) {
+						for(let y = sy * -1; y <= sy; y++) {
+							for(let x = sx * -1; x <= sx; x++) {
+								map[xyz[2] + z][xyz[1] + y][xyz[0] + x] = 1;
 							}
 						}
-					}
+					} 
 				}
 			}
+
 		} catch (error) {
 			console.error("Error parsing JSON:", error);
 		}
