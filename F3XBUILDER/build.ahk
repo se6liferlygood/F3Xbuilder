@@ -14,55 +14,63 @@ global resetcount := 0
     MouseGetPos &xpos, &ypos
     global xx := xpos
     global xy := ypos
-    MsgBox("X: X" xx " Y" xy)
+    MsgBox("X AXIS BOX DEFINED AT SCREEN COORDINATE: X" xx " Y" xy)
 }
 
 !y:: {
     MouseGetPos &xpos, &ypos
     global yx := xpos
     global yy := ypos
-    MsgBox("Y: X" yx " Y" yy)
+    MsgBox("Y AXIS BOX DEFINED AT SCREEN COORDINATE: X" yx " Y" yy)
 }
 
 !z:: {
     MouseGetPos &xpos, &ypos
     global zx := xpos
     global zy := ypos
-    MsgBox("Z: X" zx " Y" zy)
+    MsgBox("Z AXIS BOX DEFINED AT SCREEN COORDINATE: X" zx " Y" zy)
 }
 
-!c:: {
-    MouseGetPos &xpos, &ypos
-    global cx := xpos
-    global cy := ypos
-    MsgBox("COPY: X" xx " Y" xy)
-}
-
+global buildcount := 0
 copy() {
     Send("+{c}")
     Sleep ping
+    global buildcount := buildcount + 1
 }
 
+global edited := 0
+
+global lx := 850938039
+global ly := 32975934852
+global lz := 255339483085 ;random numbers I wrote its kinda funny lol (serversided f3x coordinate limit is 1 million)
 movebrick(x,y,z) {
     while A_IsSuspended {
         Sleep 1000
     }
+    global edited
     global xx
     global xy
     global yx
     global yy
     global zx
     global zy
+    global lx
+    global ly
+    global lz
     speed := 100
     times := 2
     movesleep := 5
     global ping
     pingsleep := ping + ping / 2
 
+    if(x = lx && y = ly && z = lz) {
+        return 0
+    }
+
     Send("z")
     Sleep time
 
-
+    if(x != lx) {
     loop times {
     Sleep movesleep
     MouseMove(xx + 1,xy + 1,speed)
@@ -76,8 +84,11 @@ movebrick(x,y,z) {
     Sleep time
     SendText("" x)
     Sleep pingsleep
+    lx := x
+    edited++
+    }
     
-
+    if(y != ly) {
     loop times {
     Sleep movesleep
     MouseMove(yx + 1,yy + 1,speed)
@@ -91,8 +102,11 @@ movebrick(x,y,z) {
     Sleep time
     SendText("" y)
     Sleep pingsleep
+    ly := y
+    edited++
+    }
     
-
+    if(z != lz) {
     loop times {
     Sleep movesleep
     MouseMove(zx + 1,zy + 1,speed)
@@ -106,13 +120,28 @@ movebrick(x,y,z) {
     Sleep time
     SendText("" z)
     Sleep pingsleep
+    lz := z
+    edited++
+    }
 
     Send("{Enter}")
     Sleep time
 }
 
+global lxs := 0
+global lys := 0
+global lzs := 0
 resize(xsize, ysize, size) {
-    movebrick("-1e6","-1e6","-1e6")
+    ;movebrick("-1e6","-1e6","-1e6")
+    while A_IsSuspended {
+        Sleep 1000
+    }
+
+    global edited
+
+    global lxs
+    global lys
+    global lzs
     global xx
     global xy
     global yx
@@ -120,141 +149,154 @@ resize(xsize, ysize, size) {
     global zx
     global zy
     speed := 100
-    times := 3
-    rtime := 35
+    times := 2
+    movesleep := 5
     global ping
-    pingsleep := ping * 2
+    pingsleep := ping + ping / 2
 
-    MouseMove(0,0,speed)
-    Sleep rtime
+    if(xsize = lxs && ysize = lys && size = lzs) {
+        return 0
+    }
+
     Send("x")
-    Sleep rtime
+    Sleep time
 
-
+    if(xsize != lxs) {
     loop times {
-    Sleep rtime
+    Sleep movesleep
     MouseMove(xx + 1,xy + 1,speed)
-    Sleep rtime
+    Sleep movesleep
     MouseMove(xx,xy,speed)
     }
-    Sleep rtime
+    Sleep time
     MouseMove(xx + 1,xy + 1,speed)
-    Sleep rtime
+    Sleep time
     MouseClick("Left")
-    Sleep rtime
+    Sleep time
     SendText("" xsize)
     Sleep pingsleep
-    
-    MouseMove(0,0,speed)
-    Sleep rtime
+    lxs := xsize
+    edited++
+    }
 
+    if(ysize != lys) {
     loop times {
-    Sleep rtime
+    Sleep movesleep
     MouseMove(yx + 1,yy + 1,speed)
-    Sleep rtime
+    Sleep movesleep
     MouseMove(yx,yy,speed)
     }
-    Sleep rtime
+    Sleep time
     MouseMove(yx + 1,yy + 1,speed)
-    Sleep rtime
+    Sleep time
     MouseClick("Left")
-    Sleep rtime
+    Sleep time
     SendText("" ysize)
     Sleep pingsleep
-    
+    lys := ysize
+    edited++
+    }    
 
-    MouseMove(0,0,speed)
-    Sleep rtime
-
+    if(size != lzs) {
     loop times {
-    Sleep rtime
+    Sleep movesleep
     MouseMove(zx + 1,zy + 1,speed)
-    Sleep rtime
+    Sleep movesleep
     MouseMove(zx,zy,speed)
     }
-    Sleep rtime
+    Sleep time
     MouseMove(zx + 1,zy + 1,speed)
-    Sleep rtime
+    Sleep time
     MouseClick("Left")
-    Sleep rtime
+    Sleep time
     SendText("" size)
     Sleep pingsleep
+    lzs := size
+    edited++
+    }
 
-    MouseMove(0,0,speed)
-    Sleep rtime
     Send("{Enter}")
-    Sleep rtime
+    Sleep time
 }
 
 global width := 0
+global buildsize := 0
 JsonToObj(JsonString) {
-    global width := 0
-    wcheck := 0
-    ; Check if the input string is valid
-    if (JsonString == "") {
-        MsgBox("Error: Empty JSON string provided.")
-        return []  ; Return an empty array
-    }
-
-    ; Remove whitespace characters
-    JsonString := StrReplace(JsonString, " ", "")
-    JsonString := StrReplace(JsonString, "`t", "")  ; Remove tabs
-    JsonString := StrReplace(JsonString, "`n", "")  ; Remove new lines
-
-    ; Initialize the main 3D array
-    local MainArray := []
-
-    ; Remove outer brackets and split the string into top-level arrays
-    JsonString := SubStr(JsonString, 2, StrLen(JsonString) - 2)  ; Remove the outer brackets
-    local TopLevelArrays := StrSplit(JsonString, "],[")
-
-    for TopLevelArray in TopLevelArrays {
-        ; Clean up the array string
-        TopLevelArray := StrReplace(TopLevelArray, "[", "")  ; Remove opening bracket
-        TopLevelArray := StrReplace(TopLevelArray, "]", "")  ; Remove closing bracket
-
-        ; Initialize a 2D array
-        local TwoDArray := []
-
-        ; Split into individual rows
-        local Rows := StrSplit(TopLevelArray, "],[")
-
-        for Row in Rows {
-            ; Clean up the row string
-            Row := StrReplace(Row, "[", "")
-            Row := StrReplace(Row, "]", "")
-
-            ; Split into individual elements and convert to numbers
-            local Elements := StrSplit(Row, ",")
-            local RowArray := []
-            for Element in Elements {
-                RowArray.Push(Number(Element))  ; Convert to integer and add to the row array
-                if(Number(Element) > 0 && wcheck = 0) {
-                    width++
-                }
+    global buildsize := 0
+    barray := []
+    tstr := ""
+    loop StrLen(JsonString) {
+        index := SubStr(JsonString, A_index, 1)
+        if(index != "[" && index != "]") {
+            if(index = ",") {
+                barray.Push(Integer(tstr))
+                tstr := ""
+            } else {
+                tstr := tstr index
             }
-            if(width > 0) {
-                wcheck := 1
-            }
-            TwoDArray.Push(RowArray)  ; Add the row to the 2D array
+        } else if(index = "]") {
+            barray.Push(Integer(tstr))
         }
-        MainArray.Push(TwoDArray)  ; Add the 2D array to the main 3D array
     }
+    loop barray.Length / 2 {
+        xyz := DecodePackedNumber(barray[A_Index * 2 - 1])
+        buildsize += xyz[1] * xyz[2] * xyz[3]
+    }
+    i := 1
+    i2 := i + 2
+    done := 0
+    a:
+    while(true) {
+        if(i > barray.Length) {
+            break
+        }
+        i2 := i + 2
+        while (done = 0) {
+            if(i + 2 >= barray.Length) {
+                break a
+            } else if(i2 >= barray.Length) {
+                break
+            }
+            if(barray[i2] = barray[i]) {
+                pos := barray[i + 1]
+                size := barray[i]
+                
+                barray[i + 1] := barray[i2 + 1]
+                barray[i] := barray[i2]
 
-    return MainArray  ; Return the constructed 3D array
+                barray[i2 + 1] := pos
+                barray[i2] := size
+            }
+            i2 += 2
+        }
+        i += 2
+    }
+    return barray
 }
 
 clear() {
+    last := A_Clipboard
+    A_Clipboard := "/clear"
+    Sleep time
     Send("/")
     Sleep time
-    SendText("/clear")
+    Send("^v")
     Sleep time
     Send("{Enter}")
     Sleep time
+    A_Clipboard := last
 }
 
 global building := 0
-global f3xstr := "BUILDING!`n`nHOLD B TO CANCEL BUILDING!`n`nYOU CAN PRESS ALT I TO CHAT OR ALT P TO PAUSE!"
+global f3xstr := "BUILDING!`n`nHOLD B TO CANCEL BUILDING!`n`nYOU CAN PRESS ALT P TO PAUSE!"
+
+DecodePackedNumber(encoded) {
+    num1 := (encoded >> 16) & 0xFF ; Extract the first 8 bits
+    num2 := (encoded >> 8) & 0xFF  ; Extract the second 8 bits
+    num3 := encoded & 0xFF         ; Extract the last 8 bits
+    return [num1, num2, num3]
+}
+
 
 build(checks, pi, f, x, y, z, sz) {
     if(!(WinActive("Roblox") || WinActive("RobloxPlayerBeta") || WinActive("Roblox.exe"))) {
@@ -277,9 +319,31 @@ build(checks, pi, f, x, y, z, sz) {
     if(checks = 0) {
     global ping := InputBox("TYPE IN YOUR AVARAGE PING!").value
     ; Get input values
-    x := InputBox("X").value
-    y := InputBox("Y").value
-    z := InputBox("Z").value
+    pos := InputBox("TYPE IN THE COORDINATES WHERE THE BUILD IS TO BE BUILT!`n`n(example if you type in 0 0 0 then it will build at 0 0 0)",,,"0 0 0").Value " "
+    tstr := ""
+    count := 1
+    x := 0
+    y := 0
+    z := 0
+    loop StrLen(pos) {
+        index := SubStr(pos, A_index, 1)
+        if(index != " ") {
+            tstr := tstr index
+        } else {
+            if(count = 1) {
+                x := Integer(tstr)
+                tstr := ""
+            } else if(count = 2) {
+                y := Integer(tstr)
+                tstr := ""
+            } else {
+                z := Integer(tstr)
+                tstr := ""
+            }
+            count++
+        }
+    }
+    ;MsgBox("X" x "Y" y "Z" z)
     size := InputBox("size").value
     str := InputBox("BUILD FILE").value ".json"
     } else {
@@ -290,14 +354,27 @@ build(checks, pi, f, x, y, z, sz) {
         z := z
         size := sz
     }
-    if(size >= 2048 / 3) {
-      size := Floor(2048 / 3)
+    if(size >= 2048 / 10) {
+      size := Floor(2048 / 10)
     }
     ; Read the JSON data from the specified file
     json := FileRead(str)
     
-    ; Convert JSON data back to a 3D array in AHK
-    array3D := JsonToObj(json)
+    ; Convert JSON data to instructions for f3x macro
+    arrayB := JsonToObj(json)
+
+    mode := 1
+
+    global lx := 321293472598569245
+    global ly := 4298373294628342
+    global lz := 2487568736587264826589
+    global lxs := lx
+    global lys := ly
+    global lzs := lz
+    global edited := 0
+    global buildcount := 0
+    global buildsize
+    currentbuildsize := 0
 
     Sleep time
 
@@ -305,273 +382,51 @@ build(checks, pi, f, x, y, z, sz) {
     ToolTip(f3xstr, A_ScreenWidth / 2, A_ScreenHeight / 2)
     global building := 1
 
-
-    cubesize := 1
-    xcubesize := 0
-    ox := x
-    oz := z
-    oz1 := z + 1
-    ox1 := x + 1
-    loopcountz := 0
-    zcubesize := 0
-    zbuilding := 0
-    buildcount := 0
-    skipcount := 0
-
-    global width
-    length := width / 2
-
-
-    while (checks = 1 || checks = 0) {
-        if(f = "loopmaze.json") {
-            str := "loopmaze" Random(1,5) ".json"
-            json := FileRead(str)
-            array3D := JsonToObj(json)
-        }
-        if((checks = 1 && (zbuilding = 1 && zcubesize >= loopcountz - 1)) || (checks = 1 && buildcount = 6)) {
-            if(buildcount != 6) {
-                x := x - length * size
-            }
-            skipcount := skipcount + 1
-            goto skip
-        }
-    clear()
-    copy()
-    movebrick("-1e6","-1e6","-1e6")
-    clear()
-    resize(size,size,size)
-    Sleep time * 2
-
-
-    brickcount := 0
-    currentbricks := 0
-    percentagewise := 0
-    percentage := 0
-    loop 9 {
-        if(GetKeyState("b","P")) {
+    loop arrayB.Length {
+        if(GetKeyState("b")) {
             building := 0
             ToolTip()
             return 0
         }
-        check := 1
-        check2 := 0
-        squish := 0
-        addy := 0
-        ccount := 0
-        xsize := size
-        ysize := size
-        zsize := size
-        currentxsize := xsize
-        currentysize := ysize
-        currentzsize := zsize
-        if(A_Index = 1) {
-            indextype := 2
-        } else if(A_Index = 2) {
-            indextype := 1
-        } else {
-            indextype := A_Index
+        if(A_Index < 2) {
+            A_Index := 2
+            continue
         }
-        if(indextype = 3) {
-            xsize := xsize * 3
-        } else if(indextype = 4) {
-            xsize := size
-            ysize := ysize * 3
-        } else if(indextype = 5) {
-            xsize := size
-            ysize := size
-            zsize := size * 3
-        } else if(indextype = 6) {
-            zsize := size
-            xsize := size * 3
-            ysize := size * 3
-        } else if(indextype = 7) {
-            zsize := size * 3
-            xsize := size * 3
-            ysize := size
-        } else if(indextype = 8) {
-            zsize := size * 3
-            xsize := size
-            ysize := size * 3
-        } else if(indextype = 9) {
-            xsize := size * 3
-            ysize := size * 3
-            zsize := size * 3
+        if(mode = 1) {
+            mode := 0 ;size uneven index
+        } else if(mode = 0) {
+            mode := 1 ;position even index
         }
-
-
-
-    ; Iterate over depth, length, and width to access elements
-    loop array3D.Length {  ; Loop through actual depth of the array
-        if(GetKeyState("b","P")) {
-            building := 0
-            ToolTip()
-            return 0
-        }
-        zlevel := A_Index  ; 1-based index for depth
-        if(check = 1) {
-            check := 0
-        } else if(check = 0) {
-            squish := squish - 1
-            check2 := 1
-        }
-        ; Check if the z-level exists
-        if (zlevel <= array3D.Length) {
-            loop length {
-                if(GetKeyState("b","P")) {
-                    building := 0
-                    ToolTip()
-                    return 0
-                }
-                ylevel := A_Index  ; 1-based index for length
-                ; Check if the y-level exists in the current z-level
-                if (ylevel <= array3D[zlevel].Length) {
-                    loop width {
-                        if(GetKeyState("b","P")) {
-                            building := 0
-                            ToolTip()
-                            return 0
-                        }
-                        xlevel := A_Index  ; 1-based index for width
-
-                        ; Check if the x-level exists in the current y-level
-                        if (xlevel <= array3D[zlevel][ylevel].Length) {
-
-
-                            index := array3D[zlevel][ylevel][xlevel]
-                            ; Check the value at the current index
-                            if (index > 0) {
-                                if(indextype = 2) {
-                                    if(index = 1) {
-                                        brickcount++
-                                        percentagewise += 1
-                                    } else if(index >= 3 && index <= 5) {
-                                        brickcount++
-                                        percentagewise += 3
-                                    } else if(index >= 6 && index <= 8) {
-                                        brickcount++
-                                        percentagewise += 9
-                                    } else if(index = 9){
-                                        brickcount++
-                                        percentagewise += 27
-                                    }
-                                } else {
-
-                                check := 1
-                                if(check2 = 1) {
-                                    check2 := 0
-                                    addy++
-                                    squish := squish - length
-                                }
-                                if(index = indextype) {
-                                    ccount++
-                                    if(ccount >= 3) {
-                                        ccount := 0
-                                        clear()
-                                        Sleep time
-                                    }
-                                copy()
-                                if(indextype > 2) {
-                                    if(indextype = 3 && (currentxsize != xsize || currentysize != ysize)) {
-                                        currentxsize := xsize
-                                        currentysize := ysize
-                                        resize(size,size,xsize)
-                                    } else if(indextype = 4 && (currentxsize != xsize || currentysize != ysize)) {
-                                        currentxsize := xsize
-                                        currentysize := ysize
-                                        resize(ysize,size,size)
-                                    } else if(indextype = 5 && (currentxsize != xsize || currentysize != ysize || currentzsize != zsize)) {
-                                        currentxsize := xsize
-                                        currentysize := ysize
-                                        currentzsize := zsize
-                                        resize(size,zsize,size)
-                                    } else if(indextype = 6 && (currentxsize != xsize || currentysize != ysize || currentzsize != zsize)) {
-                                        currentxsize := xsize
-                                        currentysize := ysize
-                                        currentzsize := zsize
-                                        resize(ysize,size,xsize)
-                                    } else if(indextype = 7 && (currentxsize != xsize || currentysize != ysize || currentzsize != zsize)) {
-                                        currentxsize := xsize
-                                        currentysize := ysize
-                                        currentzsize := zsize
-                                        resize(size,zsize,xsize)
-                                    } else if(indextype = 8 && (currentxsize != xsize || currentysize != ysize || currentzsize != zsize)) {
-                                        currentxsize := xsize
-                                        currentysize := ysize
-                                        currentzsize := zsize
-                                        resize(ysize,zsize,size)
-                                    } else if(indextype = 9 && (currentxsize != xsize || currentysize != ysize || currentzsize != zsize)) {
-                                        currentxsize := xsize
-                                        currentysize := ysize
-                                        currentzsize := zsize
-                                        resize(ysize,zsize,xsize)
-                                    }
-                                }
-                                if(indextype = 1) {
-                                    currentbricks++
-                                    percentage++
-                                } else if(indextype >= 3 && indextype <= 5) {
-                                    currentbricks++
-                                    percentage += 3
-                                } else if(indextype >= 6 && indextype <= 8) {
-                                    currentbricks++
-                                    percentage += 9
-                                } else if(indextype = 9) {
-                                    currentbricks++
-                                    percentage += 27
-                                }
-                                logicstr := "`n`nAMOUNT OF BRICKS TO BE PLACED: " brickcount "`n`nCURRENT BRICKS PLACED: " currentbricks "`n`nBUILDING COMPLETION: " Round((percentage / percentagewise) * 100) "%"
-                                if(buildcount > 0) {
-                                    logicstr := logicstr "`n`nBUILDCOUNT: " buildcount - skipcount
-                                }
-                                movebrick(x + (zlevel + squish) * size, y + (ylevel + addy) * size,z + xlevel * size)
-                                ToolTip(f3xstr logicstr,A_ScreenWidth / 2, A_ScreenHeight / 2)
-                                }
-                            }
-                            } 
-
-
-                        }
-                    }
+        if(mode = 0) {
+            xyz := DecodePackedNumber(arrayB[A_Index])
+            resize(xyz[2] * size,xyz[3] * size,xyz[1] * size)
+            currentbuildsize += xyz[1] * xyz[2] * xyz[3]
+        } else if(mode = 1) {
+            xyz := DecodePackedNumber(arrayB[A_Index])
+            movebrick(xyz[2] * size + x,xyz[3] * size + y,xyz[1] * size + z)
+            if(A_Index != arrayB.Length) {
+                copy()
+                resetcount++
+                if(resetcount >= 5) {
+                    resetcount := 0
+                    clear()
                 }
             }
         }
+        if (!A_IsSuspended) {
+            ToolTip(f3xstr "`n`nBUILDING COMPLETION: " Round((currentbuildsize / buildsize) * 100,1) "%", A_ScreenWidth / 2, A_ScreenHeight / 2)
+        }
     }
+    xyz := DecodePackedNumber(arrayB[arrayB.Length])
+    movebrick(xyz[2] * size + x,xyz[3] * size + y,xyz[1] * size + z)
 
-}
-skip:
-if(zcubesize < loopcountz) {
-    z := z + width * size
-    zcubesize := zcubesize + 1
-    if(zcubesize >= loopcountz) {
-        x := ox
-    }
-    zbuilding := 1
-} else {
-if(xcubesize < cubesize) {
-    x := x + length * size
-    xcubesize := xcubesize + 1
-    zbuilding := 0
-} else {
-    z := z + width * size
-    oz1 := z
-    ox1 := x
-    z := oz
-    xcubesize := 0
-    cubesize := cubesize + 1
-    loopcountz := loopcountz + 1
-    zcubesize := 0
-    zbuilding := 1
-}
-}
-if(checks = 0) {
-    goto out
-}
-buildcount := buildcount + 1
-    }
-    out:
+    ;MsgBox("" arrayB[arrayB.Length])
+
+    
     Sleep 1000
     ToolTip()
     building := 0
+    MsgBox("EDITED COUNT: " edited "`nAMOUNT OF BRICKS: " buildcount)
 }
 
 !b:: {
@@ -579,7 +434,7 @@ buildcount := buildcount + 1
     build(0,0,0,0,0,0,0)
 }
 
-!f:: {
+!i:: {
     MsgBox("FOREVER BUILD MODE!")
     global ping := InputBox("TYPE IN YOUR AVARAGE PING!").value
     ; Get input values
@@ -597,13 +452,13 @@ buildcount := buildcount + 1
     global time := InputBox("CURRENT TIME DELAY BETWEEN EVERY ACTION IS " time " MILISECONDS CHANGE IT TO SOMETHING ELSE!").value
 }
 
-!r:: {
+^r:: {
     MsgBox("RELOADED SCRIPT!")
     Reload
 }
 
 tutorial() {
-    MsgBox("F3X MACRO TUTORIAL!`n`nPRESS CONTROL T TO VIEW TUTORIAL IF YOU NEED TO VIEW IT AGAIN!`n`n`n`nTHESE ARE THE STEPS YOU NEED TO DO BEFORE YOU CAN START BUILDING!`n`n1. HAVE A FRESH F3X WITH NO GUI MOVED!`n`n2. PRESS Z WHILE HOLDING F3X THEN HOLD YOUR MOUSE OVER THE X AXIS BOX AND PRESS ALT X`n`n3. HOLD YOUR MOUSE OVER THE Y AXIS BOX AND PRESS ALT Y`n`n4. HOLD YOUR MOUSE OVER THE Z AXIS BOX AND PRESS ALT Z`n`n5. DISABLE SHIFTLOCK IN SETTINGS!`n`n`n`nKEYS!`n`nPRESS ALT B TO BUILD A SINGLE BUILD!`n`nPRESS ALT F TO KEEP ON BUILDING FOREVER!`n`nTO BUILD YOU MUST FIRST HAVE A BRICK SELECTED!`n`nPRESS CONTROL E TO EXIT THIS MACRO!`n`nTHIS ONLY WORKS ON ENGLISH KEYBOARD LAYOUT! IF YOU DONT HAVE ENGLISH KEYBOARD LAYOUT YOU CAN CHANGE KEYBOARD SETTINGS TO HAVE IT!")
+    MsgBox("F3X MACRO TUTORIAL!`n`nPRESS CONTROL T TO VIEW TUTORIAL IF YOU NEED TO VIEW IT AGAIN!`n`n`n`nTHESE ARE THE STEPS YOU NEED TO DO BEFORE YOU CAN START BUILDING!`n`n1. HAVE A FRESH F3X WITH NO GUI MOVED!`n`n2. PRESS Z WHILE HOLDING F3X THEN HOLD YOUR MOUSE OVER THE X AXIS BOX AND PRESS ALT X`n`n3. HOLD YOUR MOUSE OVER THE Y AXIS BOX AND PRESS ALT Y`n`n4. HOLD YOUR MOUSE OVER THE Z AXIS BOX AND PRESS ALT Z`n`n5. DISABLE SHIFTLOCK IN SETTINGS!`n`n`n`nKEYS!`n`nPRESS ALT B TO BUILD A SINGLE BUILD!`n`nTO BUILD YOU MUST FIRST HAVE A BRICK SELECTED!`n`nPRESS CONTROL E TO EXIT THIS MACRO!`n`nTHIS ONLY WORKS ON ENGLISH KEYBOARD LAYOUT! IF YOU DONT HAVE ENGLISH KEYBOARD LAYOUT YOU CAN CHANGE KEYBOARD SETTINGS TO HAVE IT!")
 }
 
 tutorial()
@@ -618,21 +473,6 @@ tutorial()
 }
 
 #HotIf (building = 1)
-
-!i:: {
-    global f3xstr
-    ToolTip()
-    str := InputBox("TYPE WHAT YOU WANT TO CHAT!").value
-    Sleep 500
-    Send("/")
-    Sleep 500
-    SendText(str)
-    Sleep 500
-    Send("{Enter}")
-    Sleep 1000
-    ToolTip(f3xstr, A_ScreenWidth / 2, A_ScreenHeight / 2)
-}
-
 #SuspendExempt
 
 !p:: { 
