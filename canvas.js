@@ -1,7 +1,7 @@
 const canvas = document.getElementById("canvas1");
 const ctx = canvas.getContext('2d');
 canvas.height = Number(prompt("BUILD SIZE!\n\nIT IS BEST TO START OUT WITH 5 OR 10 IF IT IS YOUR FIRST TIME!\n\n(TYPE IN A NUMBER)"));
-canvas.width = canvas.height * 2;
+canvas.width = Math.round(canvas.height * (window.innerWidth / window.innerHeight));
 depth = canvas.height;
 zlevel = 0;
 document.title = zlevel + 1;
@@ -38,150 +38,105 @@ const array3D = (x, y, z) => {
 }
 var map = array3D(canvas.height,canvas.width,depth);
 
-function allNeighborsAreOne(array, z, y, x) {
-	for (let dz = -1; dz <= 1; dz++) {
-	  for (let dy = -1; dy <= 1; dy++) {
-		for (let dx = -1; dx <= 1; dx++) {
-		  // Skip the center cell itself
-		  if (dz === 0 && dy === 0 && dx === 0) continue;
-  
-		  // Check if the neighbor exists and has a value of 1
-		  if (array[z + dz]?.[y + dy]?.[x + dx] !== 1) {
-			return false; // Return false if any neighbor is undefined or not equal to 1
-		  }
-		}
-	  }
+function isEven(n) {
+	return n % 2 == 0;
+ }
+
+ function decode3(encoded) {
+    // Extract the original numbers
+    const num1 = (encoded >> 16) & 0xFF; // Get the first 8 bits
+    const num2 = (encoded >> 8) & 0xFF;  // Get the next 8 bits
+    const num3 = encoded & 0xFF;        // Get the last 8 bits
+    return [num1, num2, num3];
+}
+
+function encode3(x,y,z) {
+	return (x << 16) | (y << 8) | z
+}
+
+
+function encodesize(array, z, y, x,zz,yy,xx) {
+	if(array[z + Math.sign(zz)]?.[y]?.[x] != 1 || array[z]?.[y + Math.sign(yy)]?.[x] != 1 || array[z]?.[y]?.[x + Math.sign(xx)] != 1) {
+		return false;
 	}
-	return true; // All neighbors are defined and equal to 1
-  }
+	for(let sz = zz * -1; sz <= zz; sz++) {
+		for(let sy = yy * -1; sy <= yy; sy++) {
+			for(let sx = xx * -1; sx <= xx; sx++) {
 
+				//console.log(`Checking: Z${z + sz}Y${y + sy}X${x + sx}\nSTART: Z${z}Y${y}X${x}`);
+				if(array[z + sz]?.[y + sy]?.[x + sx] != 1) {
+                    return false;
+                }
 
-function allNeighborsAreOne2d(array,z,y,x,c) {
-	if(c == 0) { //1x3x3
-		for(let dy = -1; dy <= 1; dy++) {
-			for(let dx = -1; dx <= 1; dx++) {
-				if(dx === 0 && dy === 0) continue;
-
-				if(array[z][y + dy]?.[x + dx] !== 1) {
-					return false;
-				}
 			}
 		}
-		return true;
-	} else if(c == 1) { //3x1x3
-		for(let dz = -1; dz <= 1; dz++) {
-			for(let dx = -1; dx <= 1; dx++) {
-				if(dz === 0 && dx === 0) continue;
-
-				if(array[z + dz]?.[y][x + dx] !== 1) {
-					return false;
-				}
-			}
-		}
-		return true;
-	} else if(c == 2) { //3x3x1
-		for(let dz = -1; dz <= 1; dz++) {
-			for(let dy = -1; dy <= 1; dy++) {
-				if(dz === 0 && dy === 0) continue;
-
-				if(array[z + dz]?.[y + dy]?.[x] !== 1) {
-					return false;
-				}
-			}
-		}
-		return true;
 	}
+	//console.log(`FOUND SIZE: Z${zz * 2 + 1}Y${yy * 2 + 1}X${xx * 2 + 1}\nAT: Z${z}Y${y}X${x}`)
+	ctx.globalAlpha = (y + x)/(canvas.height + canvas.width) + 0.1;
+	for(let sz = zz * -1; sz <= zz; sz++) {
+		for(let sy = yy * -1; sy <= yy; sy++) {
+			for(let sx = xx * -1; sx <= xx; sx++) {
+				ctx.fillStyle = "red"
+				ctx.fillRect(x + sx, y + sy,1,1);
+				array[z + sz][y + sy][x + sx] = 0;
+			}
+		}
+	}
+	ctx.globalAlpha = 1;
+	ctx.fillStyle = "blue";
+	ctx.fillRect(x,y,1,1);
+	return encode3(xx * 2 + 1,yy * 2 + 1,zz * 2 + 1);
 }
 
 function out(farray) {
 	pause = 1;
-	let array = JSON.parse(JSON.stringify(farray)); //yeah I had to copy the fucking array because javascript likes to change original array otherwise. fuck you javascript
-
-	// cellular automata written by me
-	for(let i = 0; i < 3; i++) {
-
-	for(let z = 0; z < depth; z++) {
-		for(let y = 0; y < canvas.height; y++) {
-			for(let x = 0; x < canvas.width; x++) {
-
-				if(i == 2) { // last stage
-
-				if(array[z][y][x] == 1) {
-				if(!(typeof array[z]?.[y]?.[x - 1] === "undefined" || typeof array[z]?.[y]?.[x + 1] === "undefined") && (array[z][y][x - 1] == 1 && array[z][y][x + 1] == 1)) { //1x1x3
-					array[z][y][x + 1] = 2;
-					array[z][y][x - 1] = 2;
-					array[z][y][x] = 3;
-				} else if(!(typeof array[z]?.[y - 1]?.[x] === "undefined" || typeof array[z]?.[y + 1]?.[x] === "undefined") && (array[z][y - 1][x] == 1 && array[z][y + 1][x] == 1)) { //1x3x1
-					array[z][y - 1][x] = 2;
-					array[z][y + 1][x] = 2;
-					array[z][y][x] = 4;
-				} else if(!(typeof array[z - 1]?.[y]?.[x] === "undefined" || typeof array[z + 1]?.[y]?.[x] === "undefined") && (array[z - 1][y][x] == 1 && array[z + 1][y][x] == 1)) { //3x1x1
-					array[z - 1][y][x] = 2;
-					array[z + 1][y][x] = 2;
-					array[z][y][x] = 5;
-				}
-			}
-
-				} else if(i == 1) { // second stage
-
-					if(array[z][y][x] == 1) {
-					if(allNeighborsAreOne2d(array,z,y,x,0)) { //1x3x3
-						for(let dy = -1; dy <= 1; dy++) {
-							for(let dx = -1; dx <= 1; dx++) {
-								if(dx === 0 && dy === 0) continue;
-
-								array[z][y + dy][x + dx] = 2;
+	filename = prompt("WHAT NAME WILL THE FILE BE") + ".json";
+	ctx.clearRect(0,0,canvas.width,canvas.height);
+	let outarray = [canvas.width,canvas.height];
+	let xsize = 10;
+	let array = JSON.parse(JSON.stringify(farray));
+	if(xsize > canvas.width) {
+		xsize = canvas.width;
+	}
+	let ysize = 10;
+	if(ysize > canvas.height) {
+		ysize = canvas.height;
+	}
+	let zsize = 10;
+	if(zsize < depth) {
+		zsize = depth;
+	}
+	// checking all possible size combinations then turning that size and coordinate it finds into a single number that can be decoded to 3 xyz size numbers (AAAAAAAAA SOOO MANY FOR LOOPS WHAT THE FUCK!)
+	let check1 = true;
+	let skipped = 0;
+	for(let zz = zsize; zz >= 0; zz--) {
+		for(let yy = ysize; yy >= 0; yy--) {
+			for(let xx = xsize; xx >= 0; xx--) {
+				check1 = false;
+				for(let z = 0; z < depth; z++) {
+					for(let y = 0; y < canvas.height; y++) {
+						for(let x = 0; x < canvas.width; x++) {
+							if(array[z][y][x] == 1) {
+								check1 = true;
+								//console.log("Z" + z + "Y" + y + "X" + x);
+								let iresult = encodesize(array,z,y,x,zz,yy,xx);
+								if(iresult != false) {
+									outarray.push(iresult); //encoded size
+									outarray.push(encode3(x,y,z)); //encoded position
 								}
 							}
-
-						array[z][y][x] = 6;
-					} else if(allNeighborsAreOne2d(array,z,y,x,1)) { //3x1x3
-						for(let dz = -1; dz <= 1; dz++) {
-							for(let dx = -1; dx <= 1; dx++) {
-								if(dz === 0 && dx === 0) continue;
-				
-								array[z + dz][y][x + dx] = 2;
-							}
-						}
-						array[z][y][x] = 7;
-					} else if(allNeighborsAreOne2d(array,z,y,x,2)) { //3x3x1
-						for(let dz = -1; dz <= 1; dz++) {
-							for(let dy = -1; dy <= 1; dy++) {
-								if(dz === 0 && dy === 0) continue;
-				
-								array[z + dz][y + dy][x] = 2;
-							}
-						}
-						array[z][y][x] = 8;
-					}
-				}
-
-				} else if(i == 0) { // first stage
-
-					if(array[z][y][x] == 1) {
-						if(allNeighborsAreOne(array,z,y,x)) { //3x3x3
-							for(let dz = -1; dz <= 1; dz++) {
-								for(let dy = -1; dy <= 1; dy++) {
-									for(let dx = -1; dx <= 1; dx++) {
-										if (dz === 0 && dy === 0 && dx === 0) continue;
-										array[z + dz][y + dy][x + dx] = 2
-									}
-								}
-							}
-							array[z][y][x] = 9;
 						}
 					}
 				}
-
 			}
 		}
 	}
-	}
 
+	let debug = false
+	if(debug == false) {
 	//json
-	filename = prompt("WHAT NAME WILL THE FILE BE") + ".json";
     // Convert the 3D array to JSON format
-    const json = JSON.stringify(array);
+    const json = JSON.stringify(outarray);
 
     // Create a blob and URL for the JSON data
     const blob = new Blob([json], { type: "application/json" });
@@ -197,8 +152,13 @@ function out(farray) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+	} else {
+		console.log(outarray);
+		console.log("AMOUNT OF BRICKS: " + outarray.length / 2 + "\nAMOUNT OF TIMES SKIPPED: " + skipped);
+	}
 	setTimeout(() => {
 		pause = 0;
+		ctx.globalAlpha = 1;
 	},1000)
 }
 
@@ -284,10 +244,10 @@ var drawblock = (x,y,z,x2,y2,z2,array,erase) => {
 			for(let xx = x; xx <= x2; xx++) {
 				if(erase == true) {
 					array[zz][yy][xx] = 2;
-					console.log("ERASED Z"+zz+"Y"+yy+"X"+xx);
+					//console.log("ERASED Z"+zz+"Y"+yy+"X"+xx);
 				} else {
 					array[zz][yy][xx] = 1;
-					console.log("DRAWN Z"+zz+"Y"+yy+"X"+xx);
+					//console.log("DRAWN Z"+zz+"Y"+yy+"X"+xx);
 				}
 			}
 		}
@@ -301,6 +261,7 @@ var drawingblock = 0;
 var erase = false;
 var mstacky = new stack();
 var mstackx = new stack();
+var mstackz = new stack();
 var keys = [];
 onkeydown = onkeyup = (e) => {
     keys[e.keyCode] = e.type == 'keydown';
@@ -388,12 +349,20 @@ onkeydown = onkeyup = (e) => {
 	}
 	if(keys[71]) { //g generate
 		let choice = 0
-		switch(Number(prompt("TYPE 1 TO GENERATE A MAZE PATH ON YOUR CURRENT LEVEL!\n\n TYPE 2 TO COPY THE LAYER UNDER OR ABOVE YOU BUT INVERTED!\n\nTYPE 3 TO COPY THE LAYER THAT IS UNDER OR ABOVE YOU!\n\nTYPE 4 TO ERASE CURRENT LAYER!\n\nTYPE 5 TO DRAW / ERASE A BLOCK DEFINED AREA!\n\nTYPE 6 TO NOT DO ANYTHING"))) {
+		switch(Number(prompt("TYPE 1 TO GENERATE A MAZE ON YOUR CURRENT LEVEL!\n\n TYPE 2 TO COPY THE LAYER UNDER OR ABOVE YOU BUT INVERTED!\n\nTYPE 3 TO COPY THE LAYER THAT IS UNDER OR ABOVE YOU!\n\nTYPE 4 TO ERASE CURRENT LAYER!\n\nTYPE 5 TO DRAW / ERASE A BLOCK DEFINED AREA!\n\nTYPE 6 TO NOT DO ANYTHING"))) {
 			case 1: //maze generation
 				maze = 1;
 				map[zlevel][mouse.y][mouse.x] = 1;
 				mstackx.change(mouse.x);
 				mstacky.change(mouse.y);
+				mstackz.change(zlevel);
+				//for(let i = 0; i < depth; i++) {
+					for(let j = 0; j < canvas.height; j++) {
+						for(let k = 0; k < canvas.width; k++) {
+							map[zlevel][j][k] = 1;
+						}
+					}
+				//}
 			break;
 			case 2: //draw inverted layer above or under you
 				if(confirm("CONFIRM TO COPY THE LAYER BUT INVERTED UNDER YOU\n\nDONT CONFIRM TO COPY THE LAYER BUT INVERTED ABOVE YOU!")) choice = 1; //under
@@ -500,72 +469,33 @@ function process3DArrayFromFile(file) {
 			// Parse the JSON data
 			const jsonData = JSON.parse(event.target.result);
 
-			// Ensure the data is a 3D array
+			// Ensure the data is an array
 			if (!Array.isArray(jsonData)) {
 				console.error("Invalid JSON data format.");
 				return;
 			}
-
-			//I added so that the build size changes with build file imported
-			canvas.width = 0;
-			for(let i = 0; i < jsonData[0][0].length; i++) {
-				if(jsonData[0][0][i] > 0) canvas.width++;
-			}
-			canvas.height = canvas.width / 2;
+			canvas.width = jsonData[0];
+			canvas.height = jsonData[1];
 			depth = canvas.height;
-			zlevel = 0;
-			document.title = zlevel + 1;
-			above = 0;
-			under = 0;
-
-			// Iterate through the 3D array and process data
-			for (let z = 0; z < jsonData.length; z++) {
-				for (let y = 0; y < jsonData[z].length; y++) {
-					for (let x = 0; x < jsonData[z][y].length; x++) {
-						//this is my own code
-						index = jsonData[z][y][x];
-						if(index === 1) {
-							map[z][y][x] = 1;
-						} else if(index === 3) { //1x1x3
-							map[z][y][x] = 1;
-							map[z][y][x - 1] = 1;
-							map[z][y][x + 1] = 1;
-						} else if(index === 4) { //1x3x1
-							map[z][y][x] = 1;
-							map[z][y - 1][x] = 1;
-							map[z][y + 1][x] = 1;
-						} else if(index === 5) { //3x1x1
-							map[z][y][x] = 1;
-							map[z - 1][y][x] = 1;
-							map[z + 1][y][x] = 1;
-						} else if(index === 6) { //1x3x3
-							for(let dy = -1; dy <= 1; dy++) {
-								for(let dx = -1; dx <= 1; dx++) {
-									map[z][y + dy][x + dx] = 1;
-								}
-							}
-						} else if(index === 7) { //3x1x3
-							for(let dz = -1; dz <= 1; dz++) {
-								for(let dx = -1; dx <= 1; dx++) {
-									map[z + dz][y][x + dx] = 1;
-								}
-							}
-						} else if(index === 8) { //3x3x1
-							for(let dz = -1; dz <= 1; dz++) {
-								for(let dy = -1; dy <= 1; dy++) {
-									map[z + dz][y + dy][x] = 1;
-								}
-							}
-						} else if(index === 9) { //3x3x3
-							for(let dz = -1; dz <= 1; dz++) {
-								for(let dy = -1; dy <= 1; dy++) {
-									for(let dx = -1; dx <= 1; dx++) {
-										map[z + dz][y + dy][x + dx] = 1;
-									}
-								}
+			map = array3D(canvas.width,canvas.height,depth);
+			for(let i = 2; i < jsonData.length; i++) {
+				if(isEven(i + 1)) { //plus one to match the AHK array index so I dont confuse myself
+					let xyz = decode3(jsonData[i]);
+					let xyzSize = decode3(jsonData[i - 1]);
+					let sx = (xyzSize[0] - 1) / 2;
+					if(sx < 0) sx = 0;
+					let sy = (xyzSize[1] - 1) / 2;
+					if(sy < 0) sy = 0;
+					let sz = (xyzSize[2] - 1) / 2;
+					if(sz < 0) sz = 0;
+					console.log("POSITION: X" + xyz[0] + "Y" + xyz[1] + "Z" + xyz[2] + "\nSIZE: X" + xyzSize[0] + "Y" + xyzSize[1] + "Z" + xyzSize[2]);
+					for(let z = sz * -1; z <= sz; z++) {
+						for(let y = sy * -1; y <= sy; y++) {
+							for(let x = sx * -1; x <= sx; x++) {
+								map[xyz[2] + z][xyz[1] + y][xyz[0] + x] = 1;
 							}
 						}
-					}
+					} 
 				}
 			}
 		} catch (error) {
@@ -590,49 +520,76 @@ var game = () => {
 	while(maze == 1) { //maze generation (recursive backtracking)
 		pause = 1;
 		let went = 0;
-		let direction = RB(1,4); // 1 = up, 2 = down, 3 = left, 4 = right
+		let direction = RB(1,4); // 1 = front, 2 = back, 3 = left, 4 = right, 5 = up, 6 = down (not doing 3d mazes yet so im sticking to 2 dimensions rn)
 		let direction2 = RB(1,2);
 		let count = 0;
 		while(went == 0) {
 			let y = mstacky.peek();
 			let x = mstackx.peek();
+			let z = mstackz.peek();
 			switch(direction) {
-				case 1: //up
-					if(map[zlevel][y - 2]?.[x] !== 1 && y - 2 >= 0) {
+				case 1: //front
+					if(map[z][y - 2]?.[x] !== 2 && y - 2 >= 0) {
 						mstacky.push(y - 2);
 						mstackx.push(x);
-						map[zlevel][y - 1][x] = 1;
-						map[zlevel][y - 2][x] = 1;
+						mstackz.push(z);
+						map[z][y - 1][x] = 2;
+						map[z][y - 2][x] = 2;
 						went = 1;
 					}
 				break;
-				case 2: //down
-					if(map[zlevel][y + 2]?.[x] !== 1 && y + 2 < canvas.height) {
+				case 2: //back
+					if(map[z][y + 2]?.[x] !== 2 && y + 2 < canvas.height) {
 						mstacky.push(y + 2);
 						mstackx.push(x);
-						map[zlevel][y + 1][x] = 1;
-						map[zlevel][y + 2][x] = 1;
+						mstackz.push(z);
+						map[z][y + 1][x] = 2;
+						map[z][y + 2][x] = 2;
 						went = 1;
 					}
 				break;
 				case 3: //left
-					if(map[zlevel][y][x - 2] !== 1 && x - 2 >= 0) {
+					if(map[z][y][x - 2] !== 2 && x - 2 >= 0) {
 						mstacky.push(y);
 						mstackx.push(x - 2);
-						map[zlevel][y][x - 1] = 1;
-						map[zlevel][y][x - 2] = 1;
+						mstackz.push(z);
+						map[z][y][x - 1] = 2;
+						map[z][y][x - 2] = 2;
 						went = 1;
 					}
 				break;
 				case 4: //right
-					if(map[zlevel][y][x + 2] !== 1 && x + 2 < canvas.width) {
+					if(map[z][y][x + 2] !== 2 && x + 2 < canvas.width) {
 						mstacky.push(y);
 						mstackx.push(x + 2);
-						map[zlevel][y][x + 1] = 1;
-						map[zlevel][y][x + 2] = 1;
+						mstackz.push(z);
+						map[z][y][x + 1] = 2;
+						map[z][y][x + 2] = 2;
 						went = 1;
 					}
 				break;
+				/*
+				case 5: //up
+				if(map[z + 2]?.[y][x] !== 2 && z + 2 < depth) {
+					mstacky.push(y);
+					mstackx.push(x);
+					mstackz.push(z + 2);
+					map[z + 1][y][x] = 2;
+					map[z + 2][y][x] = 2;
+					went = 1;
+				}
+				break;
+				case 6: //down
+				if(map[z - 2]?.[y][x] !== 2 && z - 2 > 0) {
+					mstacky.push(y);
+					mstackx.push(x);
+					mstackz.push(z - 2);
+					map[z - 1][y][x] = 2;
+					map[z - 2][y][x] = 2;
+					went = 1;
+				}
+				break;
+				*/
 			}
 			if(went == 0) {
 				count++;
@@ -649,12 +606,15 @@ var game = () => {
 					direction2 = RB(1,2);
 					mstackx.pop();
 					mstacky.pop();
-					if(mstackx.isempty() || mstacky.isempty()) {
+					mstackz.pop();
+					if(mstackx.isempty() || mstacky.isempty() || mstackz.isempty()) {
 						went = 1;
 						mstackx.empty();
 						mstacky.empty();
+						mstackz.empty();
 						mstackx.push(0);
 						mstacky.push(0);
+						mstackz.push(zlevel);
 						maze = 0;
 						pause = 0;
 						above = 0;
