@@ -1,7 +1,7 @@
 const canvas = document.getElementById("canvas1");
 const ctx = canvas.getContext('2d');
 canvas.height = 100;
-canvas.width = canvas.height * 2;
+canvas.width = Math.round(canvas.height * (window.innerWidth / window.innerHeight));
 var depth = canvas.height / 2;
 
 alert("YOU NEED TO DRAG AND DROP THE BUILD FILE TO VIEW IT!\n\nCONTROLS ARE IN THE TUTORIAL!\n\n(I am sorry if this build viewer is shit because I dont know enough math yet)");
